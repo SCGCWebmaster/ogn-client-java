@@ -6,7 +6,15 @@ package org.ogn.client.demo;
 
 import static java.lang.System.out;
 
+import java.io.IOException;
 import java.util.Optional;
+
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.HttpClientBuilder;
 
 import org.ogn.client.AircraftBeaconListener;
 import org.ogn.client.OgnClient;
@@ -35,13 +43,31 @@ public class OgnDemoAircraftBeaconsClient {
 
 	static class AcListener implements AircraftBeaconListener {
 
+		void postData(String data) {
+
+			StringEntity entity = new StringEntity(data,
+					ContentType.APPLICATION_JSON);
+
+			HttpClient httpClient = HttpClientBuilder.create().build();
+			HttpPost request = new HttpPost("https://www.gliding.com.au/members2/flarm");
+			request.setEntity(entity);
+
+			HttpResponse response = null;
+			try {
+				response = httpClient.execute(request);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			System.out.println(response.getStatusLine().getStatusCode());
+		}
+
 		@Override
 		public void onUpdate(AircraftBeacon beacon, Optional<AircraftDescriptor> descriptor) {
 
-			out.println("*********************************************");
-
 			// print the beacon
-			out.println(JsonUtils.toJson(beacon));
+			String data = JsonUtils.toJson(beacon);
+			out.println(data);
+			postData(data);
 
 			// if the aircraft has been recognized print its descriptor too
 			if (descriptor.isPresent()) {
@@ -50,20 +76,19 @@ public class OgnDemoAircraftBeaconsClient {
 
 			if (logIGC)
 				igcLogger.log(beacon, descriptor);
-
-			out.println("*********************************************");
 		}
 	}
 
 	public static void main(String[] args) throws Exception {
 		final OgnClient client = OgnClientFactory.createClient();
 
-		System.out.println("connecting...");
+		System.out.println("connecting3...");
 
-		// client.connect("r/+51.537/+5.472/250");
-		// client.connect("r/+49.782/+19.450/200");
+		client.connect("r/-34.641667/+148.025/20"); // Coota
+//		client.connect("r/-33.369504/+149.521638/20"); // Piper's Airfield - Bathurst Soaring Club
+//		client.connect("r/-34.038078/+150.686759/20"); // Camden
 
-		client.connect();
+		//client.connect();
 
 		client.subscribeToAircraftBeacons(new AcListener());
 
